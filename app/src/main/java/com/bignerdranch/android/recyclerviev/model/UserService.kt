@@ -2,6 +2,7 @@ package com.bignerdranch.android.recyclerviev.model
 
 import com.github.javafaker.Faker
 import java.util.*
+import kotlin.collections.ArrayList
 
 // класс контроллер
 
@@ -32,6 +33,8 @@ class UserService {
         //users.remove(user)
         val indexToDelete = users.indexOfFirst { it.id == user.id }
         if(indexToDelete != -1){
+            // Создаём новый список
+            users = ArrayList(users)
             users.removeAt(indexToDelete)
             notifyChanges()
         }
@@ -42,6 +45,7 @@ class UserService {
         if(oldIndex != -1) return
         val newIndex = oldIndex + moveBy
         if(newIndex < 0 || newIndex >= users.size) return
+        users = ArrayList(users)
         Collections.swap(users,oldIndex,newIndex)
         notifyChanges()
     }

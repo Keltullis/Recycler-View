@@ -6,6 +6,7 @@ import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bignerdranch.android.recyclerviev.databinding.ItemUserBinding
 import com.bignerdranch.android.recyclerviev.model.App
@@ -21,13 +22,43 @@ interface UserActionListener{
     fun onUserDetails(user: User)
 }
 
+// Создаём DiffCallback,он определяет изменился ли объект
+class UserDiffCallback(private val oldList:List<User>, private val newList: List<User>):DiffUtil.Callback(){
+
+    override fun getOldListSize(): Int = oldList.size
+
+    override fun getNewListSize(): Int = newList.size
+
+    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        val oldUser = oldList[oldItemPosition]
+        val newUser = newList[newItemPosition]
+        // Сравниваем id шники
+        return oldUser.id == newUser.id
+    }
+
+    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        val oldUser = oldList[oldItemPosition]
+        val newUser = newList[newItemPosition]
+        // Сравниваем контент
+        return oldUser == newUser
+    }
+
+}
+
 class UsersAdapter(private val actionListener: UserActionListener):RecyclerView.Adapter<UsersAdapter.UsersViewHolder>(),View.OnClickListener {
+
+    // Вызываем дифф колбэк,отправляем в него старый и новый список
+    // вычисляем изменения и передаём обновление
+
 
     //private val usersService: UserService = UserService()
     var users:List<User> = emptyList()
         set(newValue) {
+            val diffCallback = UserDiffCallback(field,newValue)
+            val diffResult = DiffUtil.calculateDiff(diffCallback)
             field = newValue
-            notifyDataSetChanged()
+            // Передаём обновление адаптеру(this)
+            diffResult.dispatchUpdatesTo(this)
         }
 
     class UsersViewHolder(val binding:ItemUserBinding):RecyclerView.ViewHolder(binding.root)

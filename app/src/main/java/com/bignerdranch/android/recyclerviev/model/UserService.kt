@@ -42,7 +42,8 @@ class UserService {
 
     fun moveUser(user: User, moveBy:Int){
         val oldIndex = users.indexOfFirst { it.id == user.id }
-        if(oldIndex != -1) return
+        // если такого пользователя не нашли,то индекс будет равен -1
+        if(oldIndex == -1) return
         val newIndex = oldIndex + moveBy
         if(newIndex < 0 || newIndex >= users.size) return
         users = ArrayList(users)

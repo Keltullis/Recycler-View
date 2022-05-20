@@ -29,6 +29,14 @@ class UserService {
         return users
     }
 
+    fun getById(id:Long):UserDetails{
+        val user = users.first{it.id == id}
+        return UserDetails(
+            user = user,
+            details = Faker.instance().overwatch().quote()
+        )
+    }
+
     fun deleteUser(user: User){
         //users.remove(user)
         val indexToDelete = users.indexOfFirst { it.id == user.id }

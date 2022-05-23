@@ -28,6 +28,7 @@ class SimpleTask<T>(
             } catch (e:Throwable){
                 ErrorResult(e)
             }
+            notifyListeners()
         }
     }
 

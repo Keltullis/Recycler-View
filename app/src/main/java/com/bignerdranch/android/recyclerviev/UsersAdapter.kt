@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bignerdranch.android.recyclerviev.databinding.ItemUserBinding
 import com.bignerdranch.android.recyclerviev.model.User
+import com.bignerdranch.android.recyclerviev.screens.UserListItem
 import com.bumptech.glide.Glide
 
 interface UserActionListener{
@@ -20,43 +21,14 @@ interface UserActionListener{
     fun onUserDetails(user: User)
 }
 
-// Создаём DiffCallback,он определяет изменился ли объект
-class UserDiffCallback(private val oldList:List<User>, private val newList: List<User>):DiffUtil.Callback(){
-
-    override fun getOldListSize(): Int = oldList.size
-
-    override fun getNewListSize(): Int = newList.size
-
-    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        val oldUser = oldList[oldItemPosition]
-        val newUser = newList[newItemPosition]
-        // Сравниваем id шники
-        return oldUser.id == newUser.id
-    }
-
-    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-        val oldUser = oldList[oldItemPosition]
-        val newUser = newList[newItemPosition]
-        // Сравниваем контент
-        return oldUser == newUser
-    }
-
-}
 
 class UsersAdapter(private val actionListener: UserActionListener):RecyclerView.Adapter<UsersAdapter.UsersViewHolder>(),View.OnClickListener {
 
-    // Вызываем дифф колбэк,отправляем в него старый и новый список
-    // вычисляем изменения и передаём обновление
-
-
     //private val usersService: UserService = UserService()
-    var users:List<User> = emptyList()
+    var users:List<UserListItem> = emptyList()
         set(newValue) {
-            val diffCallback = UserDiffCallback(field,newValue)
-            val diffResult = DiffUtil.calculateDiff(diffCallback)
             field = newValue
-            // Передаём обновление адаптеру(this)
-            diffResult.dispatchUpdatesTo(this)
+            notifyDataSetChanged()
         }
 
     class UsersViewHolder(val binding:ItemUserBinding):RecyclerView.ViewHolder(binding.root)
@@ -67,7 +39,7 @@ class UsersAdapter(private val actionListener: UserActionListener):RecyclerView.
         val binding = ItemUserBinding.inflate(inflater,parent,false)
 
         // this это наш onClick
-        binding.root.setOnClickListener(this)
+
         binding.moreImageViwButton.setOnClickListener(this)
 
 
@@ -75,10 +47,21 @@ class UsersAdapter(private val actionListener: UserActionListener):RecyclerView.
     }
 
     override fun onBindViewHolder(holder: UsersViewHolder, position: Int) {
-        val user = users[position]
+        val userListItem = users[position]
+        val user = userListItem.user
         with(holder.binding){
             holder.itemView.tag = user
             moreImageViwButton.tag = user
+
+            if(userListItem.isInProgress){
+                moreImageViwButton.visibility = View.INVISIBLE
+                itemProgressBar.visibility = View.VISIBLE
+                holder.binding.root.setOnClickListener(null)
+            } else{
+                moreImageViwButton.visibility = View.VISIBLE
+                itemProgressBar.visibility = View.GONE
+                holder.binding.root.setOnClickListener(this@UsersAdapter)
+            }
 
             userNameTextView.text = user.name
             userCompanyTextView.text = user.company
@@ -120,7 +103,7 @@ class UsersAdapter(private val actionListener: UserActionListener):RecyclerView.
         val popupMenu = CustomPopupMenu(view.context,view)
         val context = view.context
         val user = view.tag as User
-        val position = users.indexOfFirst { it.id == user.id }
+        val position = users.indexOfFirst { it.user.id == user.id }
         //1-гроуп айди ,2-айди действия,3-Порядок,4-название
         popupMenu.menu.add(0, ID_MOVE_UP,Menu.NONE,context.getString(R.string.move_up)).apply {
             isEnabled = position > 0

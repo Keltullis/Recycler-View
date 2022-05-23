@@ -1,7 +1,10 @@
 package com.bignerdranch.android.recyclerviev.model
 
+import com.bignerdranch.android.recyclerviev.tasks.SimpleTask
+import com.bignerdranch.android.recyclerviev.tasks.Task
 import com.github.javafaker.Faker
 import java.util.*
+import java.util.concurrent.Callable
 import kotlin.collections.ArrayList
 
 // класс контроллер
@@ -12,9 +15,13 @@ class UserService {
 
     private var users = mutableListOf<User>()
 
+    private var loaded  = false
+
     private val listeners = mutableListOf<UsersListener>()
 
-    init {
+
+    fun loadUsers():Task<Unit> = SimpleTask<Unit>(Callable {
+        Thread.sleep(2000)
         val faker = Faker.instance()
         IMAGES.shuffle()
         users = (1..100).map { User(
@@ -23,21 +30,22 @@ class UserService {
             company = faker.company().name(),
             photo = IMAGES[it % IMAGES.size]
         ) }.toMutableList()
-    }
+        loaded = true
+        notifyChanges()
+    })
 
-    fun getUsers():List<User>{
-        return users
-    }
-
-    fun getById(id:Long):UserDetails{
+    fun getById(id:Long):Task<UserDetails> = SimpleTask<UserDetails>(Callable {
+        Thread.sleep(2000)
         val user = users.first{it.id == id}
-        return UserDetails(
+        return@Callable UserDetails(
             user = user,
             details = Faker.instance().overwatch().quote()
         )
-    }
+    })
 
-    fun deleteUser(user: User){
+
+
+    fun deleteUser(user: User):Task<Unit> = SimpleTask<Unit>(Callable {
         //users.remove(user)
         val indexToDelete = users.indexOfFirst { it.id == user.id }
         if(indexToDelete != -1){
@@ -46,23 +54,26 @@ class UserService {
             users.removeAt(indexToDelete)
             notifyChanges()
         }
-    }
+    })
 
-    fun moveUser(user: User, moveBy:Int){
+    fun moveUser(user: User, moveBy:Int):Task<Unit> = SimpleTask<Unit>(Callable {
+        Thread.sleep(2000)
         val oldIndex = users.indexOfFirst { it.id == user.id }
         // если такого пользователя не нашли,то индекс будет равен -1
-        if(oldIndex == -1) return
+        if(oldIndex == -1) return@Callable
         val newIndex = oldIndex + moveBy
-        if(newIndex < 0 || newIndex >= users.size) return
+        if(newIndex < 0 || newIndex >= users.size) return@Callable
         users = ArrayList(users)
         Collections.swap(users,oldIndex,newIndex)
         notifyChanges()
-    }
+    })
 
     // Добавляем лисенер и сразу же запускаем его и передаём заполненный список пользователей
     fun addListener(listener: UsersListener){
         listeners.add(listener)
-        listener.invoke(users)
+        if(loaded) {
+            listener.invoke(users)
+        }
     }
 
     fun removeListener(listener:UsersListener){
@@ -71,6 +82,7 @@ class UserService {
 
     // Обновление данных,удалили пользователя,рассказали слушателю об этом,а тот присвоил изменённый список в адаптер
     private fun notifyChanges(){
+        if(!loaded) return
         listeners.forEach {
             it.invoke(users)
         }
